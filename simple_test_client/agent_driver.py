@@ -3,6 +3,7 @@ import logging
 from signal import SIGINT, SIGTERM
 import os
 import argparse
+import random
 
 import dotenv
 
@@ -15,18 +16,21 @@ dotenv.load_dotenv()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Publish audio to a LiveKit room")
-    parser.add_argument(
-        "--room", default="my-room", help="Name of the LiveKit room to join"
-    )
+    parser.add_argument("--room", help="Name of the LiveKit room to join")
     parser.add_argument(
         "--test", help="Name of the test to run (without .json extension)"
     )
     args = parser.parse_args()
-
     logging.basicConfig(
         level=logging.INFO,
         handlers=[logging.FileHandler("publish_wave.log"), logging.StreamHandler()],
     )
+
+    # Generate random room name if not provided
+    room_name = args.room
+    if not room_name:
+        room_name = f"room_{random.randint(1, 1000)}"
+        logging.info(f"Using randomly generated room name: {room_name}")
 
     logging.info("HIHIH")
     # Create a new event loop
@@ -57,7 +61,7 @@ if __name__ == "__main__":
     async def run_publisher():
         """Run the publisher participant."""
         try:
-            await run_room(room, args.room, script, listener_mode=False)
+            await run_room(room, room_name, script, listener_mode=False)
             logging.info("Publisher connected to room")
             # Keep running until manually terminated
             while True:
@@ -74,7 +78,7 @@ if __name__ == "__main__":
         """Run the listener participant."""
         try:
             # Use a different identity for the listener
-            await run_room(listener_room, args.room, script, listener_mode=True)
+            await run_room(listener_room, room_name, script, listener_mode=True)
             logging.info("Listener connected to room")
             # Keep running until manually terminated
             while True:
